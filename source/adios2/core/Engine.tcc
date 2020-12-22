@@ -17,6 +17,11 @@
 
 #include "adios2/helper/adiosFunctions.h" // CheckforNullptr
 
+#ifdef ADIOS2_HAVE_CUDA
+  #include <cuda.h>
+  #include <cuda_runtime.h>
+#endif
+
 namespace adios2
 {
 namespace core
@@ -39,6 +44,14 @@ typename Variable<T>::Span &Engine::Put(Variable<T> &variable,
 template <class T>
 void Engine::Put(Variable<T> &variable, const T *data, const Mode launch)
 {
+    #ifdef ADIOS2_HAVE_CUDA
+	cudaPointerAttributes attributes;
+	cudaPointerGetAttributes(&attributes, (const void *) data);
+	if(attributes.devicePointer != NULL){
+	    return;
+	}
+    #endif
+
     CommonChecks(variable, data, {{Mode::Write, Mode::Append}},
                  "in call to Put");
 

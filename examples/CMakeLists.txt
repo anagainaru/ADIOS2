@@ -8,6 +8,10 @@ add_subdirectory(hello)
 add_subdirectory(query)
 add_subdirectory(useCases)
 
+if(ADIOS2_HAVE_CUDA)
+  add_subdirectory(gpuDirect)
+endif()
+
 if(ADIOS2_HAVE_MPI)
   add_subdirectory(heatTransfer)
 endif()

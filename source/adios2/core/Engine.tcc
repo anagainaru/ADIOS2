@@ -48,7 +48,12 @@ void Engine::Put(Variable<T> &variable, const T *data, const Mode launch)
 	cudaPointerAttributes attributes;
 	cudaPointerGetAttributes(&attributes, (const void *) data);
 	if(attributes.devicePointer != NULL){
-	    return;
+	    // if the buffer is on GPU memory copy it to the CPU
+	    size_t count = helper::GetTotalSize(variable.Count());
+	    std::vector<T> hostData(count);
+	    cudaMemcpy(hostData.data(), data, count * sizeof(T),
+		       cudaMemcpyDeviceToHost);
+	    data = hostData.data();
 	}
     #endif
 

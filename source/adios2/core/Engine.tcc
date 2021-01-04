@@ -20,6 +20,7 @@
 #ifdef ADIOS2_HAVE_CUDA
   #include <cuda.h>
   #include <cuda_runtime.h>
+  #include "cufile.h"
 #endif
 
 namespace adios2
@@ -45,16 +46,16 @@ template <class T>
 void Engine::Put(Variable<T> &variable, const T *data, const Mode launch)
 {
     #ifdef ADIOS2_HAVE_CUDA
-	cudaPointerAttributes attributes;
-	cudaPointerGetAttributes(&attributes, (const void *) data);
-	if(attributes.devicePointer != NULL){
-	    // if the buffer is on GPU memory copy it to the CPU
-	    size_t count = helper::GetTotalSize(variable.Count());
-	    std::vector<T> hostData(count);
-	    cudaMemcpy(hostData.data(), data, count * sizeof(T),
-		       cudaMemcpyDeviceToHost);
-	    data = hostData.data();
-	}
+        size_t count = helper::GetTotalSize(variable.Count());
+        std::vector<T> hostData(count);
+	    cudaPointerAttributes attributes;
+	    cudaPointerGetAttributes(&attributes, (const void *) data);
+	    if(attributes.devicePointer != NULL){
+	        // if the buffer is on GPU memory copy it to the CPU
+	        cudaMemcpy(hostData.data(), data, count * sizeof(T),
+		           cudaMemcpyDeviceToHost);
+	        data = hostData.data();
+	    }
     #endif
 
     CommonChecks(variable, data, {{Mode::Write, Mode::Append}},

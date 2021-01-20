@@ -135,6 +135,17 @@ if(UNIX)
   target_sources(adios2_core PRIVATE toolkit/transport/file/FilePOSIX.cpp)
 endif()
 
+if(ADIOS2_HAVE_CUDA)
+  add_library(adios2_core_gpu
+    toolkit/transport/gpu/GPUdirect.cpp
+  )
+  set_property(TARGET adios2_core_gpu PROPERTY EXPORT_NAME core_gpu)
+  set_property(TARGET adios2_core_gpu PROPERTY OUTPUT_NAME adios2${ADIOS2_LIBRARY_SUFFIX}adios2_core_gpu)
+  target_include_directories(adios2_core_gpu PUBLIC ${CUDA_INCLUDE_DIRS} /usr/local/cuda-11.1/targets/x86_64-linux/lib/)
+  target_link_directories(adios2_core_gpu PUBLIC /usr/local/cuda-11.1/targets/x86_64-linux/lib/)
+  target_link_libraries(adios2_core_gpu PUBLIC adios2_core ${CUDA_LIBRARIES} -lcufile)
+endif()
+
 if(ADIOS2_HAVE_MPI)
   add_library(adios2_core_mpi
     core/IOMPI.cpp

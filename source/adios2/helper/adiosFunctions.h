@@ -20,5 +20,6 @@
 #include "adios2/helper/adiosType.h"    //Type casting, conversion, checks, etc.
 #include "adios2/helper/adiosXML.h"     //XML parsing
 #include "adios2/helper/adiosYAML.h"    //YAML parsing
+#include "adios2/helper/adiosCUDA.h"    //CUDA functions
 
 #endif /* ADIOS2_HELPER_ADIOSFUNCTIONS_H_ */

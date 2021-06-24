@@ -32,6 +32,13 @@
 namespace adios2
 {
 
+/** Memory space for the buffers received with Put */
+enum class MemorySpace
+{
+    Host, ///< default memory space
+    CUDA  ///< GPU memory spaces
+};
+
 /** Variable shape type identifier, assigned automatically from the signature of
  *  DefineVariable */
 enum class ShapeID

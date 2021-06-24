@@ -197,6 +197,11 @@ public:
     void SetStepSelection(const adios2::Box<size_t> &stepSelection);
 
     /**
+     * Sets the memory step for all following Puts
+     */
+    void SetMemorySpace(const MemorySpace mem);
+
+    /**
      * Returns the number of elements required for pre-allocation based on
      * current count and stepsCount
      * @return elements of type T required for pre-allocation

@@ -71,6 +71,7 @@ public:
     T m_Max = T();
     /** current value */
     T m_Value = T();
+    bool m_IsGPU = false;
 
     struct BPInfo
     {
@@ -106,6 +107,7 @@ public:
         SelectionType Selection = SelectionType::BoundingBox;
         bool IsValue = false;
         bool IsReverseDims = false;
+        bool IsGPU = false;
     };
 
     /** use for multiblock info */
@@ -126,6 +128,7 @@ public:
                          const size_t stepsCount = 1) noexcept;
 
     void SetData(const T *data) noexcept;
+    void SetMemorySpace(const MemorySpace mem);
 
     T *GetData() const noexcept;
 

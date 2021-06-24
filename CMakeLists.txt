@@ -147,6 +147,7 @@ adios_option(MGARD     "Enable support for MGARD transforms" AUTO)
 adios_option(PNG       "Enable support for PNG transforms" AUTO)
 adios_option(MPI       "Enable support for MPI" AUTO)
 adios_option(DAOS      "Enable support for DAOS" AUTO)
+adios_option(CUDA       "Enable support for Cuda" AUTO)
 adios_option(DataMan   "Enable support for DataMan" AUTO)
 adios_option(DataSpaces "Enable support for DATASPACES" AUTO)
 adios_option(SSC       "Enable support for SSC" AUTO)
@@ -174,7 +175,7 @@ if(ADIOS2_HAVE_MPI)
 endif()
 
 set(ADIOS2_CONFIG_OPTS
-    Blosc BZip2 ZFP SZ MGARD PNG MPI DataMan DAOS Table SSC SST BP5 DataSpaces ZeroMQ HDF5 HDF5_VOL IME Python Fortran SysVShMem Profiling Endian_Reverse LIBPRESSIO
+    Blosc BZip2 ZFP SZ MGARD PNG MPI DataMan CUDA DAOS Table SSC SST BP5 DataSpaces ZeroMQ HDF5 HDF5_VOL IME Python Fortran SysVShMem Profiling Endian_Reverse LIBPRESSIO
 )
 GenerateADIOSHeaderConfig(${ADIOS2_CONFIG_OPTS})
 configure_file(
@@ -296,6 +297,9 @@ message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} "
                          "${CMAKE_CXX_COMPILER_WRAPPER}")
 message("    ${CMAKE_CXX_COMPILER}")
 message("")
+if(ADIOS2_HAVE_CUDA)
+  message("  Cuda Compiler : ${CMAKE_CUDA_COMPILER} ")
+endif()
 if(ADIOS2_HAVE_Fortran)
   message("  Fortran Compiler : ${CMAKE_Fortran_COMPILER_ID} "
                                "${CMAKE_Fortran_COMPILER_VERSION} "

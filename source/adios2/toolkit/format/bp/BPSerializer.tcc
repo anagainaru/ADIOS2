@@ -72,6 +72,13 @@ inline void BPSerializer::PutPayloadInBuffer(
 {
     const size_t blockSize = helper::GetTotalSize(blockInfo.Count);
     m_Profiler.Start("memcpy");
+    if(blockInfo.IsGPU){
+        helper::CopyFromGPUToBuffer(m_Data.m_Buffer, m_Data.m_Position,
+                     blockInfo.Data, blockSize);
+        m_Profiler.Stop("memcpy");
+        m_Data.m_AbsolutePosition += blockSize * sizeof(T);
+        return;
+    }
     if (!blockInfo.MemoryStart.empty())
     {
         helper::CopyMemoryBlock(

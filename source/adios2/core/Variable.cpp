@@ -59,21 +59,6 @@ namespace core
     {                                                                          \
         m_Data = const_cast<T *>(data);                                        \
     }                                                                          \
-                                                                               \
-    template <>                                                                \
-    void Variable<T>::SetMemorySpace(const MemorySpace mem)                    \
-    {                                                                          \
-        switch(mem)                                                            \
-        {                                                                      \
-            case MemorySpace::CUDA:                                            \
-                m_IsGPU = true;                                                \
-                break;                                                         \
-            default:                                                           \
-                m_IsGPU = false;                                               \
-        }                                                                      \
-    }                                                                          \
-                                                                               \
-                                                                               \
     template <>                                                                \
     T *Variable<T>::GetData() const noexcept                                   \
     {                                                                          \

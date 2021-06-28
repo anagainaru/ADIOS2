@@ -71,7 +71,6 @@ public:
     T m_Max = T();
     /** current value */
     T m_Value = T();
-    bool m_IsGPU = false;
 
     struct BPInfo
     {
@@ -128,7 +127,6 @@ public:
                          const size_t stepsCount = 1) noexcept;
 
     void SetData(const T *data) noexcept;
-    void SetMemorySpace(const MemorySpace mem);
 
     T *GetData() const noexcept;
 

@@ -43,6 +43,18 @@ size_t VariableBase::TotalSize() const noexcept
     return helper::GetTotalSize(m_Count);
 }
 
+void VariableBase::SetMemorySpace(const MemorySpace mem)
+{
+    switch(mem)
+    {
+        case MemorySpace::CUDA:
+	    m_IsGPU = true;
+	    break;
+        default:
+  	    m_IsGPU = false;
+    }
+}
+
 void VariableBase::SetShape(const adios2::Dims &shape)
 {
     if (m_Type == helper::GetDataType<std::string>())

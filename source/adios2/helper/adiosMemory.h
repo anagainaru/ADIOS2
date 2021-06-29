@@ -40,12 +40,12 @@ void InsertToBuffer(std::vector<char> &buffer, const T *source,
                     const size_t elements = 1) noexcept;
 
 /*
-* Copies data from a GPU buffer to a specific location in the adios buffer
-*/
+ * Copies data from a GPU buffer to a specific location in the adios buffer
+ */
 #ifdef ADIOS2_HAVE_CUDA
 template <class T>
-void CopyFromGPUToBuffer(std::vector<char> &buffer, size_t &position, const T *source,
-                  const size_t elements = 1) noexcept;
+void CopyFromGPUToBuffer(std::vector<char> &buffer, size_t &position,
+                         const T *source, const size_t elements = 1) noexcept;
 #endif
 
 /**

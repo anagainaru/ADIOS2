@@ -45,13 +45,13 @@ size_t VariableBase::TotalSize() const noexcept
 
 void VariableBase::SetMemorySpace(const MemorySpace mem)
 {
-    switch(mem)
+    switch (mem)
     {
-        case MemorySpace::CUDA:
-	    m_IsGPU = true;
-	    break;
-        default:
-  	    m_IsGPU = false;
+    case MemorySpace::CUDA:
+        m_IsGPU = true;
+        break;
+    default:
+        m_IsGPU = false;
     }
 }
 

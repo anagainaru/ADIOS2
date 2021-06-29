@@ -17,7 +17,7 @@ namespace helper
 {
 
 /*
- * CUDA kernel for computing the min and max from a 
+ * CUDA kernel for computing the min and max from a
  * GPU buffer
  */
 template <class T>

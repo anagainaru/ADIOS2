@@ -72,9 +72,10 @@ inline void BPSerializer::PutPayloadInBuffer(
 {
     const size_t blockSize = helper::GetTotalSize(blockInfo.Count);
     m_Profiler.Start("memcpy");
-    if(blockInfo.IsGPU){
+    if (blockInfo.IsGPU)
+    {
         helper::CopyFromGPUToBuffer(m_Data.m_Buffer, m_Data.m_Position,
-                     blockInfo.Data, blockSize);
+                                    blockInfo.Data, blockSize);
         m_Profiler.Stop("memcpy");
         m_Data.m_AbsolutePosition += blockSize * sizeof(T);
         return;
@@ -123,20 +124,17 @@ void BPSerializer::UpdateIndexOffsetsCharacteristics(size_t &currentPosition,
 
         switch (id)
         {
-        case (characteristic_time_index):
-        {
+        case (characteristic_time_index): {
             currentPosition += sizeof(uint32_t);
             break;
         }
 
-        case (characteristic_file_index):
-        {
+        case (characteristic_file_index): {
             currentPosition += sizeof(uint32_t);
             break;
         }
 
-        case (characteristic_value):
-        {
+        case (characteristic_value): {
             if (dataType == type_string)
             {
                 // first get the length of the string
@@ -156,18 +154,15 @@ void BPSerializer::UpdateIndexOffsetsCharacteristics(size_t &currentPosition,
 
             break;
         }
-        case (characteristic_min):
-        {
+        case (characteristic_min): {
             currentPosition += sizeof(T);
             break;
         }
-        case (characteristic_max):
-        {
+        case (characteristic_max): {
             currentPosition += sizeof(T);
             break;
         }
-        case (characteristic_minmax):
-        {
+        case (characteristic_minmax): {
             // first get the number of subblocks
             const uint16_t M =
                 helper::ReadValue<uint16_t>(buffer, currentPosition);
@@ -181,8 +176,7 @@ void BPSerializer::UpdateIndexOffsetsCharacteristics(size_t &currentPosition,
             }
             break;
         }
-        case (characteristic_offset):
-        {
+        case (characteristic_offset): {
             const uint64_t currentOffset = helper::ReadValue<uint64_t>(
                 buffer, currentPosition, isLittleEndian);
 
@@ -253,9 +247,8 @@ void BPSerializer::UpdateIndexOffsetsCharacteristics(size_t &currentPosition,
 }
 
 template <class T>
-inline size_t
-BPSerializer::GetAttributeSizeInData(const core::Attribute<T> &attribute) const
-    noexcept
+inline size_t BPSerializer::GetAttributeSizeInData(
+    const core::Attribute<T> &attribute) const noexcept
 {
     size_t size = 14 + attribute.m_Name.size() + 10;
     size += 4 + sizeof(T) * attribute.m_Elements;

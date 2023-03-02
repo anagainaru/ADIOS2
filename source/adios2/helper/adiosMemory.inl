@@ -21,7 +21,6 @@
 #include <thread>
 /// \endcond
 
-#include "adios2/helper/adiosCUDA.h"
 #include "adios2/helper/adiosMath.h"
 #include "adios2/helper/adiosSystem.h"
 #include "adios2/helper/adiosType.h"

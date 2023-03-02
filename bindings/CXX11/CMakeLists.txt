@@ -89,7 +89,6 @@ install(
         adios2/cxx11/VariableNT.h
         adios2/cxx11/Attribute.h
         adios2/cxx11/Engine.h
-        adios2/cxx11/KokkosView.h
         adios2/cxx11/Operator.h
         adios2/cxx11/Query.h
         adios2/cxx11/Types.h

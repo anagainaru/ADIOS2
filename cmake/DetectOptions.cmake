@@ -170,22 +170,6 @@ endif()
 
 set(mpi_find_components C)
 
-# Cuda
-if(ADIOS2_USE_CUDA)
-  include(CheckLanguage)
-  check_language(CUDA)
-  if(ADIOS2_USE_CUDA STREQUAL AUTO)
-    find_package(CUDAToolkit QUIET)
-  else()
-    find_package(CUDAToolkit REQUIRED)
-  endif()
-endif()
-if(CMAKE_CUDA_COMPILER AND CUDAToolkit_FOUND)
-  enable_language(CUDA)
-  set(ADIOS2_HAVE_CUDA TRUE)
-  set(ADIOS2_HAVE_GPU_Support TRUE)
-endif()
-
 # Fortran
 if(ADIOS2_USE_Fortran STREQUAL AUTO)
   include(CheckLanguage)

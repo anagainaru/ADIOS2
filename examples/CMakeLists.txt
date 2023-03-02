@@ -18,7 +18,3 @@ endif()
 if(ADIOS2_BUILD_EXAMPLES_EXPERIMENTAL)
   add_subdirectory(experimental)
 endif()
-
-if(ADIOS2_HAVE_CUDA OR ADIOS2_HAVE_Kokkos_CUDA)
-  add_subdirectory(cuda)
-endif()

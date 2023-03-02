@@ -104,9 +104,13 @@ add_library(adios2_core
 
   toolkit/burstbuffer/FileDrainer.cpp
   toolkit/burstbuffer/FileDrainerSingleThread.cpp
+  helper/adiosKokkos.cpp
 )
 set_property(TARGET adios2_core PROPERTY EXPORT_NAME core)
 set_property(TARGET adios2_core PROPERTY OUTPUT_NAME adios2${ADIOS2_LIBRARY_SUFFIX}_core)
+
+find_package(Kokkos REQUIRED)
+target_link_libraries(adios2_core PRIVATE Kokkos::kokkos)
 
 target_include_directories(adios2_core
   PUBLIC

@@ -146,8 +146,6 @@ adios_option(SZ         "Enable support for SZ transforms" AUTO)
 adios_option(LIBPRESSIO "Enable support for LIBPRESSIO transforms" AUTO)
 adios_option(MGARD      "Enable support for MGARD transforms" AUTO)
 adios_option(PNG        "Enable support for PNG transforms" AUTO)
-adios_option(CUDA       "Enable support for Cuda" OFF)
-adios_option(Kokkos     "Enable support for Kokkos" OFF)
 adios_option(MPI        "Enable support for MPI" AUTO)
 adios_option(DAOS       "Enable support for DAOS" AUTO)
 adios_option(DataMan    "Enable support for DataMan" AUTO)
@@ -168,23 +166,6 @@ adios_option(Sodium     "Enable support for Sodium for encryption" AUTO)
 adios_option(Catalyst   "Enable support for in situ visualization plugin using ParaView Catalyst" AUTO)
 adios_option(AWSSDK     "Enable support for S3 compatible storage using AWS SDK's S3 module" AUTO)
 include(${PROJECT_SOURCE_DIR}/cmake/DetectOptions.cmake)
-
-if(ADIOS2_HAVE_CUDA OR ADIOS2_HAVE_Kokkos_CUDA)
-    set(CMAKE_CUDA_STANDARD 11)
-    set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-        if(DEFINED Kokkos_CUDA_ARCHITECTURES)
-            set(CMAKE_CUDA_ARCHITECTURES Kokkos_CUDA_ARCHITECTURES)
-        else()
-            # Mininum common non-deprecated architecture
-            set(CMAKE_CUDA_ARCHITECTURES 52)
-        endif()
-    endif()
-endif()
-
-if(NOT DEFINED CMAKE_HIP_ARCHITECTURES AND DEFINED Kokkos_HIP_ARCHITECTURES)
-    set(CMAKE_HIP_ARCHITECTURES Kokkos_HIP_ARCHITECTURES)
-endif()
 
 if(ADIOS2_HAVE_MPI)
   if(MPIEXEC_MAX_NUMPROCS LESS 4 AND "$ENV{OMPI_MCA_rmaps_base_oversubscribe}")
@@ -237,7 +218,7 @@ endif()
 set(ADIOS2_CONFIG_OPTS
     BP5 DataMan DataSpaces HDF5 HDF5_VOL MHS SST Fortran MPI Python Blosc2
     BZip2 LIBPRESSIO MGARD PNG SZ ZFP DAOS IME O_DIRECT Sodium Catalyst SysVShMem UCX ZeroMQ 
-    Profiling Endian_Reverse AWSSDK GPU_Support CUDA Kokkos Kokkos_CUDA Kokkos_HIP
+    Profiling Endian_Reverse AWSSDK
 )
 
 GenerateADIOSHeaderConfig(${ADIOS2_CONFIG_OPTS})
@@ -366,10 +347,6 @@ message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} "
                          "${CMAKE_CXX_COMPILER_WRAPPER}")
 message("    ${CMAKE_CXX_COMPILER}")
 message("")
-if(ADIOS2_HAVE_CUDA)
-	message("  Cuda Compiler : ${CMAKE_CUDA_COMPILER} ")
-	message("    Cuda Architecture : ${CMAKE_CUDA_ARCHITECTURES} ")
-endif()
 if(ADIOS2_HAVE_Fortran)
   message("  Fortran Compiler : ${CMAKE_Fortran_COMPILER_ID} "
                                "${CMAKE_Fortran_COMPILER_VERSION} "

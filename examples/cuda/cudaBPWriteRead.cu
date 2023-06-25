@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include <cstdlib>
+
 #include <adios2.h>
 
 #include <cuda_runtime.h>
@@ -16,6 +18,44 @@
 __global__ void update_array(float *vect, int val) { vect[blockIdx.x] += val; }
 
 std::string engine("BP5");
+
+int BPWriteCPU(const std::string fname, const size_t N, int nSteps,
+            const std::string engine)
+{
+    // Initialize the simulation data
+	std::vector<float> cpuSimData(N);
+
+    // Set up the ADIOS structures
+    adios2::ADIOS adios;
+    adios2::IO io = adios.DeclareIO("WriteIO");
+    io.SetEngine(engine);
+
+    // Declare an array for the ADIOS data of size (NumOfProcesses * N)
+    const adios2::Dims shape{static_cast<size_t>(N)};
+    const adios2::Dims start{static_cast<size_t>(0)};
+    const adios2::Dims count{N};
+    auto data = io.DefineVariable<float>("data", shape, start, count);
+    data.SetMemorySpace(adios2::MemorySpace::Host);
+
+    adios2::Engine bpWriter = io.Open(fname, adios2::Mode::Write);
+
+    // Simulation steps
+    for (size_t step = 0; step < nSteps; ++step)
+    {
+        // Make a 1D selection to describe the local dimensions of the
+        // variable we write and its offsets in the global spaces
+        adios2::Box<adios2::Dims> sel({0}, {N});
+        data.SetSelection(sel);
+
+        // Start IO step every write step
+        bpWriter.BeginStep();
+        bpWriter.Put(data, cpuSimData.data());
+        bpWriter.EndStep();
+    }
+
+    bpWriter.Close();
+    return 0;
+}
 
 int BPWrite(const std::string fname, const size_t N, int nSteps,
             const std::string engine)
@@ -35,6 +75,7 @@ int BPWrite(const std::string fname, const size_t N, int nSteps,
     const adios2::Dims start{static_cast<size_t>(0)};
     const adios2::Dims count{N};
     auto data = io.DefineVariable<float>("data", shape, start, count);
+    data.SetMemorySpace(adios2::MemorySpace::GPU);
 
     adios2::Engine bpWriter = io.Open(fname, adios2::Mode::Write);
 
@@ -81,6 +122,7 @@ int BPRead(const std::string fname, const size_t N, int nSteps,
         const adios2::Dims count{N};
         const adios2::Box<adios2::Dims> sel(start, count);
         data.SetSelection(sel);
+	    data.SetMemorySpace(adios2::MemorySpace::GPU);
 
         bpReader.Get(data, gpuSimData); //, adios2::Mode::Deferred);
         bpReader.EndStep();
@@ -102,10 +144,12 @@ int main(int argc, char **argv)
     const std::string fname("Cuda" + engine + "wr.bp");
     const int device_id = 1;
     cudaSetDevice(device_id);
-    const size_t N = 6000;
+    int N = 6000;
+    if (argv[2])
+        N = atoi(argv[2]);
     int nSteps = 10, ret = 0;
 
-    ret += BPWrite(fname, N, nSteps, engine);
+    ret += BPWriteCPU(fname, N, nSteps, engine);
     ret += BPRead(fname, N, nSteps, engine);
     return ret;
 }

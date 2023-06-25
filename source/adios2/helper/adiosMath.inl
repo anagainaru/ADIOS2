@@ -22,6 +22,9 @@
 #include "adios2/common/ADIOSMacros.h"
 #include "adiosLog.h"
 
+#include <chrono>
+#include <iostream>
+
 namespace adios2
 {
 namespace helper
@@ -189,16 +192,24 @@ template <class T>
 inline void GetMinMax(const T *values, const size_t size, T &min, T &max,
                       const MemorySpace memSpace) noexcept
 {
+	std::chrono::steady_clock::time_point _start;
+	_start = std::chrono::steady_clock::now();
 #ifdef ADIOS2_HAVE_GPU_SUPPORT
     if (memSpace == MemorySpace::GPU)
     {
         GetGPUMinMax(values, size, min, max);
+	const auto duration = std::chrono::steady_clock::now() - _start;
+	std::chrono::duration<double, std::milli> duration_ms(duration);
+	std::cout << "Compute MinMax on Device " << duration_ms.count() << std::endl;
         return;
     }
 #endif
     auto bounds = std::minmax_element(values, values + size);
     min = *bounds.first;
     max = *bounds.second;
+const auto duration = std::chrono::steady_clock::now() - _start;
+std::chrono::duration<double, std::milli> duration_ms(duration);
+std::cout << "Compute MinMax on Host " << duration_ms.count() << std::endl;
 }
 
 template <>

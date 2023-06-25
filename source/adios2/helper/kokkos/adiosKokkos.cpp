@@ -10,6 +10,8 @@
 #include "adios2/common/ADIOSMacros.h"
 
 #include <Kokkos_Core.hpp>
+#include <chrono>
+#include <iostream>
 
 namespace
 {
@@ -76,11 +78,16 @@ void MemcpyBufferToGPU(char *GPUbuffer, const char *src, size_t byteCount)
 
 bool IsGPUbuffer(const void *ptr)
 {
+	std::chrono::steady_clock::time_point _start;
+	_start = std::chrono::steady_clock::now();
 #ifdef ADIOS2_HAVE_KOKKOS_CUDA
     cudaPointerAttributes attr;
     cudaPointerGetAttributes(&attr, ptr);
     if (attr.type == cudaMemoryTypeDevice)
     {
+		const auto duration = std::chrono::steady_clock::now() - _start;
+		std::chrono::duration<double, std::milli> duration_ms(duration);
+		std::cout << "Detect CUDA buffer " << duration_ms.count() << " ms" << std::endl;
         return true;
     }
 #endif
@@ -90,6 +97,9 @@ bool IsGPUbuffer(const void *ptr)
     ret = hipPointerGetAttributes(&attr, ptr);
     if (ret == hipSuccess && attr.memoryType == hipMemoryTypeDevice)
     {
+		const auto duration = std::chrono::steady_clock::now() - _start;
+		std::chrono::duration<double, std::milli> duration_ms(duration);
+		std::cout << "Detect HIP buffer " << duration_ms.count() << " ms" << std::endl;
         return true;
     }
 #endif
@@ -99,9 +109,15 @@ bool IsGPUbuffer(const void *ptr)
                                  sycl::access::decorated::no>(ptr);
     if (ret != nullptr)
     {
+		const auto duration = std::chrono::steady_clock::now() - _start;
+		std::chrono::duration<double, std::milli> duration_ms(duration);
+		std::cout << "Detect SYCL buffer " << duration_ms.count() << " ms" << std::endl;
         return true;
     }
 #endif
+	const auto duration = std::chrono::steady_clock::now() - _start;
+	std::chrono::duration<double, std::milli> duration_ms(duration);
+	std::cout << "Detect CPU buffer " << duration_ms.count() << " ms" << std::endl;
     return false;
 }
 

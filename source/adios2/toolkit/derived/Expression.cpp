@@ -9,8 +9,7 @@ namespace adios2
 {
 namespace detail
 {
-adios2::derived::ExpressionTree
-ASTNode_to_ExpressionTree(adios2::detail::ASTNode *node)
+adios2::derived::ExpressionTree ASTNode_to_ExpressionTree(adios2::detail::ASTNode *node)
 {
     adios2::derived::ExpressionTree exprTree_node(node->operation);
     for (adios2::detail::ASTNode *e : node->sub_expr)

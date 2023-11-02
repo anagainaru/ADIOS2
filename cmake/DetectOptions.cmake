@@ -193,6 +193,10 @@ endif()
 
 set(mpi_find_components C)
 
+if(ADIOS2_USE_Derived)
+    set(ADIOS2_HAVE_Derived TRUE)
+endif()
+
 if(ADIOS2_USE_Kokkos AND ADIOS2_USE_CUDA)
   message(FATAL_ERROR "ADIOS2_USE_Kokkos is incompatible with ADIOS2_USE_CUDA")
 endif()

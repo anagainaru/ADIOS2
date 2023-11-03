@@ -133,7 +133,7 @@ if (ADIOS2_HAVE_Derived)
       core/VariableDerived.cpp
       toolkit/derived/Expression.cpp
       toolkit/derived/Function.cpp toolkit/derived/Function.tcc
-      toolkit/derived/parser/ExprHelper.h)
+      toolkit/derived/ExprHelper.h)
   add_library(adios2_core_derived
       toolkit/derived/parser/lexer.cpp
       toolkit/derived/parser/parser.cpp

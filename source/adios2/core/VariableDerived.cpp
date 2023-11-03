@@ -27,15 +27,15 @@ void VariableDerived::UpdateExprDim(std::map<std::string, std::tuple<Dims, Dims,
 }
 
 std::vector<std::tuple<void *, Dims, Dims>>
-VariableDerived::ApplyExpression(std::map<std::string, MinVarInfo *> NameToMVI)
+VariableDerived::ApplyExpression(std::map<std::string, MinVarInfo> NameToMVI)
 {
     size_t numBlocks = 0;
     // check that all variables have the same number of blocks
     for (auto variable : NameToMVI)
     {
         if (numBlocks == 0)
-            numBlocks = variable.second->BlocksInfo.size();
-        if (numBlocks != variable.second->BlocksInfo.size())
+            numBlocks = variable.second.BlocksInfo.size();
+        if (numBlocks != variable.second.BlocksInfo.size())
             helper::Throw<std::invalid_argument>("Core", "VariableDerived", "ApplyExpression",
                                                  " variables do not have the same number of blocks "
                                                  " in computing the derived variable " +
@@ -52,13 +52,13 @@ VariableDerived::ApplyExpression(std::map<std::string, MinVarInfo *> NameToMVI)
         {
             Dims start;
             Dims count;
-            for (size_t d = 0; d < variable.second->Dims; d++)
+            for (size_t d = 0; d < variable.second.Dims; d++)
             {
-                start.push_back(variable.second->BlocksInfo[i].Start[d]);
-                count.push_back(variable.second->BlocksInfo[i].Count[d]);
+                start.push_back(variable.second.BlocksInfo[i].Start[d]);
+                count.push_back(variable.second.BlocksInfo[i].Count[d]);
             }
             varData.push_back(adios2::derived::DerivedData(
-                {variable.second->BlocksInfo[i].BufferP, start, count}));
+                {variable.second.BlocksInfo[i].BufferP, start, count}));
         }
         inputData.insert({variable.first, varData});
     }

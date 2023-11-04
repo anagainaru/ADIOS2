@@ -1,9 +1,9 @@
 #ifndef ADIOS2_DERIVED_Function_H_
 #define ADIOS2_DERIVED_Function_H_
 
+#include "ExprHelper.h"
 #include "adios2/common/ADIOSTypes.h"
 #include "adios2/helper/adiosLog.h"
-#include "ExprHelper.h"
 #include <functional>
 
 namespace adios2
@@ -20,18 +20,22 @@ struct DerivedData
 
 struct OperatorFunctions
 {
-    std::function<DerivedData(std::vector<DerivedData>, DataType)> ComputeFct;
-    std::function<Dims(std::vector<Dims>)> DimsFct;
+    std::function<DerivedData(std::vector<DerivedData>, DataType, double)> ComputeFct;
+    std::function<Dims(std::vector<Dims>, double)> DimsFct;
 };
 
-DerivedData AddFunc(std::vector<DerivedData> input, DataType type);
-DerivedData MagnitudeFunc(std::vector<DerivedData> input, DataType type);
+DerivedData AddFunc(std::vector<DerivedData> input, DataType type, double constant);
+DerivedData MagnitudeFunc(std::vector<DerivedData> input, DataType type, double constant);
+DerivedData PDFFunc(std::vector<DerivedData> input, DataType type, double numBins);
 
-Dims SameDimsFunc(std::vector<Dims> input);
+Dims SameDimsFunc(std::vector<Dims> input, double constant);
+Dims FixSizeFunc(std::vector<Dims> input, double constant);
 
 const std::map<adios2::detail::ExpressionOperator, OperatorFunctions> OpFunctions = {
     {adios2::detail::ExpressionOperator::OP_ADD, {AddFunc, SameDimsFunc}},
-    {adios2::detail::ExpressionOperator::OP_MAGN, {MagnitudeFunc, SameDimsFunc}}};
+    {adios2::detail::ExpressionOperator::OP_MAGN, {MagnitudeFunc, SameDimsFunc}},
+    {adios2::detail::ExpressionOperator::OP_CURL, {PDFFunc, FixSizeFunc}},
+    {adios2::detail::ExpressionOperator::OP_PDF, {PDFFunc, FixSizeFunc}}};
 
 template <class T>
 T *ApplyOneToOne(std::vector<DerivedData> inputData, size_t dataSize,

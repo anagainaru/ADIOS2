@@ -8,3 +8,7 @@ add_subdirectory(hello)
 add_subdirectory(plugins)
 add_subdirectory(simulations)
 add_subdirectory(useCases)
+
+if(ADIOS2_HAVE_Derived)
+    add_subdirectory(derived)
+endif()

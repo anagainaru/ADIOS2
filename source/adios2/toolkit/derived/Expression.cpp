@@ -168,7 +168,7 @@ Dims ExpressionTree::GetDims(std::map<std::string, Dims> NameToDims)
     }
     // get the output dimensions after applying the operator
     auto op_fct = OpFunctions.at(detail.operation);
-    Dims opDims = op_fct.DimsFct(exprDims);
+    Dims opDims = op_fct.DimsFct(exprDims, detail.constant);
     return opDims;
 }
 
@@ -206,7 +206,7 @@ ExpressionTree::ApplyExpression(DataType type, size_t numBlocks,
     auto op_fct = OpFunctions.at(detail.operation);
     for (size_t blk = 0; blk < numBlocks; blk++)
     {
-        outputData[blk] = op_fct.ComputeFct(exprData[blk], type);
+        outputData[blk] = op_fct.ComputeFct(exprData[blk], type, detail.constant);
     }
     // deallocate intermediate data after computing the operation
     for (size_t blk = 0; blk < numBlocks; blk++)

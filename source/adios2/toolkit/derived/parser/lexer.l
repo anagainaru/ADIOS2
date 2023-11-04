@@ -70,6 +70,11 @@
     yylval.sval = strdup(yytext);
     return FUNCTION;
 }
+"pdf"
+{
+    yylval.sval = strdup(yytext);
+    return FUNCTION;
+}
 "curl"
 {
     yylval.sval = strdup(yytext);

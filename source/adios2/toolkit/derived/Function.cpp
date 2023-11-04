@@ -5,6 +5,7 @@
 #include "Function.tcc"
 #include "adios2/common/ADIOSMacros.h"
 #include "adios2/helper/adiosFunctions.h"
+#include <algorithm>
 #include <cmath>
 
 namespace adios2
@@ -12,7 +13,7 @@ namespace adios2
 namespace derived
 {
 
-DerivedData AddFunc(std::vector<DerivedData> inputData, DataType type)
+DerivedData AddFunc(std::vector<DerivedData> inputData, DataType type, double constant)
 {
     size_t dataSize = std::accumulate(std::begin(inputData[0].Count), std::end(inputData[0].Count),
                                       1, std::multiplies<size_t>());
@@ -23,13 +24,13 @@ DerivedData AddFunc(std::vector<DerivedData> inputData, DataType type)
         T *addValues = ApplyOneToOne<T>(inputData, dataSize, [](T a, T b) { return a + b; });      \
         return DerivedData({(void *)addValues, inputData[0].Start, inputData[0].Count});           \
     }
-    ADIOS2_FOREACH_PRIMITIVE_STDTYPE_1ARG(declare_type_add)
+    ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(declare_type_add)
     helper::Throw<std::invalid_argument>("Derived", "Function", "AddFunc",
                                          "Invalid variable types");
     return DerivedData();
 }
 
-DerivedData MagnitudeFunc(std::vector<DerivedData> inputData, DataType type)
+DerivedData MagnitudeFunc(std::vector<DerivedData> inputData, DataType type, double constant)
 {
     size_t dataSize = std::accumulate(std::begin(inputData[0].Count), std::end(inputData[0].Count),
                                       1, std::multiplies<size_t>());
@@ -43,13 +44,59 @@ DerivedData MagnitudeFunc(std::vector<DerivedData> inputData, DataType type)
         }                                                                                          \
         return DerivedData({(void *)magValues, inputData[0].Start, inputData[0].Count});           \
     }
-    ADIOS2_FOREACH_PRIMITIVE_STDTYPE_1ARG(declare_type_mag)
+    ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(declare_type_mag)
     helper::Throw<std::invalid_argument>("Derived", "Function", "MagnitudeFunc",
                                          "Invalid variable types");
     return DerivedData();
 }
 
-Dims SameDimsFunc(std::vector<Dims> input)
+DerivedData PDFFunc(std::vector<DerivedData> inputData, DataType type, double numBins)
+{
+    if (inputData.size() > 1)
+        helper::Throw<std::invalid_argument>("Derived", "Function", "PDFFunc",
+                                             "The PDF function can only take one varaible");        
+
+    if (numBins < 1)
+        helper::Throw<std::invalid_argument>("Derived", "Function", "PDFFunc",
+                                             "Number of bins needs to be greater than 1");
+    size_t dataSize = std::accumulate(std::begin(inputData[0].Count), std::end(inputData[0].Count),
+                                      1, std::multiplies<size_t>());
+#define declare_type_pdf(T)                                                                        \
+    if (type == helper::GetDataType<T>())                                                          \
+    {                              \
+        std::vector<T> inputValues(static_cast<T *>(inputData[0].Data), static_cast<T *>(inputData[0].Data) + dataSize);                    \
+        auto min_value = *std::min_element(inputValues.begin(), inputValues.end());   \
+        auto max_value = *std::max_element(inputValues.begin(), inputValues.end());   \
+        float binWidth = static_cast<float>(max_value - min_value) / numBins; \
+        T * histogram = (T *) malloc(numBins * sizeof(T)); \
+        if (histogram == nullptr) \
+        { \
+            std::cout << "Allocation failed for the derived data" << std::endl; \
+        } \
+        memset(histogram, 0, numBins * sizeof(T)); \
+        for (T value: inputValues)   \
+        {   \
+            size_t bin = std::floor((value - min_value) / binWidth); \
+            histogram[bin]++; \
+        } \
+        return DerivedData({(void *) histogram, {0}, {static_cast<size_t>(numBins)}});           \
+    }
+    ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(declare_type_pdf)
+    helper::Throw<std::invalid_argument>("Derived", "Function", "PDFFunc",
+                                         "Invalid variable types");
+    return DerivedData();
+}
+
+/* variable list with the same dimensions {N1, N2, ..} will output a variable {constant} */
+Dims FixSizeFunc(std::vector<Dims> input, double constant)
+{
+    Dims dim({static_cast<size_t>(constant)});
+    return dim;
+};
+
+
+/* variable list with the same dimensions {N1, N2, ..} will output a variable {N1, N2, ..} */
+Dims SameDimsFunc(std::vector<Dims> input, double contant)
 {
     // check that all dimenstions are the same
     if (input.size() > 1)

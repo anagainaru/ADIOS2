@@ -41,6 +41,9 @@ template <class T>
 T *ApplyOneToOne(std::vector<DerivedData> inputData, size_t dataSize,
                  std::function<T(T, T)> compFct);
 
+template <class T>
+T * GScompute_pdf(const std::vector<T> &data, const size_t slice_size, const size_t count,
+                  const size_t nbins, const T min, const T max);
 }
 }
 #endif

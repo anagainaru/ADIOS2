@@ -34,14 +34,13 @@ void read_derived3D(size_t Nx, size_t Ny, size_t Nz, std::string derived_fct,
     adios2::IO bpIO = adios.DeclareIO("ReadBP");
     adios2::Engine bpReader = bpIO.Open(filename, adios2::Mode::Read);
 
-    for (size_t step=0; step<3; step++)
+    while(bpReader.BeginStep() == adios2::StepStatus::OK)
     {
         auto start_step = std::chrono::steady_clock::now();
-        bpReader.BeginStep();
         const std::map<std::string, adios2::Params> variables = bpIO.AvailableVariables();
         if (storeType == "DATA")
         {
-            adios2::Variable<float> bpFloats = bpIO.InquireVariable<float>(derived_fct);
+            adios2::Variable<float> bpFloats = bpIO.InquireVariable<float>("derive/magU");
             if (bpFloats)
             {
             std::vector<float> myFloats;
@@ -73,7 +72,6 @@ void read_derived3D(size_t Nx, size_t Ny, size_t Nz, std::string derived_fct,
 
         auto end_step = std::chrono::steady_clock::now();
         double timePerStep = (end_step - start_step).count() / 1000;            
-        bpReader.Close();
 
         double globalSum = 0;
         MPI_Reduce(&timePerStep, &globalSum, 1, MPI_DOUBLE, MPI_SUM, 0,
@@ -91,6 +89,8 @@ void read_derived3D(size_t Nx, size_t Ny, size_t Nz, std::string derived_fct,
               << size << "," << Nx << "," << globalSum / size << "," << globalMin / size << ","
               << globalMax / size << std::endl;
     }
+    bpReader.Close();
+
 }
 
 int main(int argc, char *argv[])

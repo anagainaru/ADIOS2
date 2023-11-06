@@ -4,12 +4,20 @@
 #include <stdexcept> //std::invalid_argument std::exception
 #include <vector>
 #include <chrono>
+#include <algorithm>
+#include <cmath>
 
 #include <adios2.h>
 
-void read_derived3D(size_t Nx, size_t Ny, size_t Nz, std::string derived_fct,
-                    int rank, int size, std::string storeType)
+
+
+void compute_magnitude(std::vector<float> U, std::vector<float> V, std::vector<float> W)
 {
+    std::vector<float> mag(U.size());
+    for (size_t i = 0; i < U.size(); i++)
+    {
+        mag[i] = std::sqrt(U[i] * U[i] + V[i] * V[i] + W[i] * W[i]);
+    }
 }
 
 void read_derived1D(size_t Nx, std::string derived_fct,
@@ -17,7 +25,7 @@ void read_derived1D(size_t Nx, std::string derived_fct,
 {
 }
 
-void read_derived3D1(size_t Nx, size_t Ny, size_t Nz, std::string derived_fct,
+void read_derived3D(size_t Nx, size_t Ny, size_t Nz, std::string derived_fct,
                     int rank, int size, std::string storeType)
 {
     std::string filename = derived_fct+".bp";
@@ -26,23 +34,63 @@ void read_derived3D1(size_t Nx, size_t Ny, size_t Nz, std::string derived_fct,
     adios2::IO bpIO = adios.DeclareIO("ReadBP");
     adios2::Engine bpReader = bpIO.Open(filename, adios2::Mode::Read);
 
+    for (size_t step=0; step<3; step++)
+    {
+        auto start_step = std::chrono::steady_clock::now();
         bpReader.BeginStep();
         const std::map<std::string, adios2::Params> variables = bpIO.AvailableVariables();
         if (storeType == "DATA")
         {
-
-        }
-        adios2::Variable<float> bpFloats = bpIO.InquireVariable<float>(derived_fct);
-        if (bpFloats)
-        {
+            adios2::Variable<float> bpFloats = bpIO.InquireVariable<float>(derived_fct);
+            if (bpFloats)
+            {
             std::vector<float> myFloats;
-
-            bpFloats.SetSelection({{0, 0, rank * Nx}, {Nz, Ny, Nx}});
-            bpReader.Get<float>(bpFloats, myFloats);
+                bpFloats.SetSelection({{0, 0, rank * Nx}, {Nz, Ny, Nx}});
+                bpReader.Get<float>(bpFloats, myFloats);
+            }
             bpReader.EndStep();
         }
+        if (storeType == "MD")
+        {
+            // read all the variables that make the derived variable and compute the vallues
+            adios2::Variable<float> bpU = bpIO.InquireVariable<float>("uvel");
+            adios2::Variable<float> bpV = bpIO.InquireVariable<float>("vvel");
+            adios2::Variable<float> bpW = bpIO.InquireVariable<float>("wvel");
 
+            std::vector<float> U;
+            std::vector<float> V;
+            std::vector<float> W;
+            bpU.SetSelection({{0, 0, rank * Nx}, {Nz, Ny, Nx}});
+            bpV.SetSelection({{0, 0, rank * Nx}, {Nz, Ny, Nx}});
+            bpW.SetSelection({{0, 0, rank * Nx}, {Nz, Ny, Nx}});
+
+            bpReader.Get<float>(bpU, U);
+            bpReader.Get<float>(bpV, V);
+            bpReader.Get<float>(bpW, W);
+            bpReader.EndStep();
+            compute_magnitude(U,V,W);
+        }
+
+        auto end_step = std::chrono::steady_clock::now();
+        double timePerStep = (end_step - start_step).count() / 1000;            
         bpReader.Close();
+
+        double globalSum = 0;
+        MPI_Reduce(&timePerStep, &globalSum, 1, MPI_DOUBLE, MPI_SUM, 0,
+           MPI_COMM_WORLD);
+        double globalMax = 0;
+        MPI_Reduce(&timePerStep, &globalMax, 1, MPI_DOUBLE, MPI_MAX, 0,
+           MPI_COMM_WORLD);
+        double globalMin = 0;
+        MPI_Reduce(&timePerStep, &globalMin, 1, MPI_DOUBLE, MPI_MIN, 0,
+           MPI_COMM_WORLD);
+
+        // Time in microseconds
+        if (rank == 0)
+            std::cout << "Read3D," << derived_fct << "," << storeType << ","
+              << size << "," << Nx << "," << globalSum / size << "," << globalMin / size << ","
+              << globalMax / size << std::endl;
+    }
 }
 
 int main(int argc, char *argv[])

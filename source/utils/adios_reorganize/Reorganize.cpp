@@ -42,6 +42,8 @@
 #include <cerrno>
 #include <cstdlib>
 
+#include <Kokkos_Core.hpp>
+
 namespace adios2
 {
 namespace utils
@@ -320,13 +322,6 @@ std::vector<VarInfo> varinfo;
 //
 void Reorganize::CleanUpStep(core::IO &io)
 {
-    for (auto &vi : varinfo)
-    {
-        if (vi.readbuf != nullptr)
-        {
-            free(vi.readbuf);
-        }
-    }
     varinfo.clear();
     // io.RemoveAllVariables();
     // io.RemoveAllAttributes();
@@ -609,14 +604,15 @@ int Reorganize::ReadWrite(core::Engine &rStream, core::Engine &wStream, core::IO
     }
 
     /*
-     * Read all variables into memory
+     * Read each variable into a Kokkos::View
      */
+    std::vector<Kokkos::View<char *>> readbuf;
+    readbuf.reserve(nvars);
     for (size_t varidx = 0; varidx < nvars; ++varidx)
     {
         if (varinfo[varidx].v != nullptr)
         {
             const std::string &name = varinfo[varidx].v->m_Name;
-            assert(varinfo[varidx].readbuf == nullptr);
             if (varinfo[varidx].writesize != 0)
             {
                 // read variable subset
@@ -625,20 +621,22 @@ int Reorganize::ReadWrite(core::Engine &rStream, core::Engine &wStream, core::IO
                 if (type == DataType::Struct)
                 {
                     // not supported
+                    std::cout << "Struct datatype are not supported for variable: " << name << std::endl;
                 }
 #define declare_template_instantiation(T)                                                          \
     else if (type == helper::GetDataType<T>())                                                     \
     {                                                                                              \
-        varinfo[varidx].readbuf = calloc(1, varinfo[varidx].writesize);                            \
+        Kokkos::View<char *> view_buf(name, varinfo[varidx].writesize); \
+        readbuf.push_back(view_buf); \
         if (varinfo[varidx].count.size() == 0)                                                     \
         {                                                                                          \
-            rStream.Get<T>(name, reinterpret_cast<T *>(varinfo[varidx].readbuf),                   \
+            rStream.Get<T>(name, reinterpret_cast<T *>(view_buf.data()),                   \
                            adios2::Mode::Sync);                                                    \
         }                                                                                          \
         else                                                                                       \
         {                                                                                          \
             varinfo[varidx].v->SetSelection({varinfo[varidx].start, varinfo[varidx].count});       \
-            rStream.Get<T>(name, reinterpret_cast<T *>(varinfo[varidx].readbuf));                  \
+            rStream.Get<T>(name, reinterpret_cast<T *>(view_buf.data()));                  \
         }                                                                                          \
     }
                 ADIOS2_FOREACH_STDTYPE_1ARG(declare_template_instantiation)
@@ -671,18 +669,18 @@ int Reorganize::ReadWrite(core::Engine &rStream, core::Engine &wStream, core::IO
     {                                                                                              \
         if (varinfo[varidx].count.size() == 0)                                                     \
         {                                                                                          \
-            wStream.Put<T>(name, reinterpret_cast<T *>(varinfo[varidx].readbuf),                   \
+            wStream.Put<T>(name, reinterpret_cast<T *>(readbuf[varidx].data()),                   \
                            adios2::Mode::Sync);                                                    \
         }                                                                                          \
         else if (varinfo[varidx].v->m_ShapeID == adios2::ShapeID::LocalArray)                      \
         {                                                                                          \
-            wStream.Put<T>(name, reinterpret_cast<T *>(varinfo[varidx].readbuf),                   \
+            wStream.Put<T>(name, reinterpret_cast<T *>(readbuf[varidx].data()),                   \
                            adios2::Mode::Sync);                                                    \
         }                                                                                          \
         else                                                                                       \
         {                                                                                          \
             varinfo[varidx].v->SetSelection({varinfo[varidx].start, varinfo[varidx].count});       \
-            wStream.Put<T>(name, reinterpret_cast<T *>(varinfo[varidx].readbuf));                  \
+            wStream.Put<T>(name, reinterpret_cast<T *>(readbuf[varidx].data()));                  \
         }                                                                                          \
     }
                 ADIOS2_FOREACH_STDTYPE_1ARG(declare_template_instantiation)

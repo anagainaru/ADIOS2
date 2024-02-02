@@ -27,7 +27,6 @@ struct VarInfo
     Dims start;
     Dims count;
     size_t writesize = 0;    // size of subset this process writes, 0: do not write
-    void *readbuf = nullptr; // read in buffer
 };
 
 class Reorganize : public Utils

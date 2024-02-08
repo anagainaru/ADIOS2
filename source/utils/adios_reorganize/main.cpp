@@ -17,6 +17,8 @@
 #include <mpi.h>
 #endif
 
+#include <Kokkos_Core.hpp>
+
 int main(int argc, char *argv[])
 {
 #if ADIOS2_USE_MPI
@@ -24,6 +26,7 @@ int main(int argc, char *argv[])
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 #endif
 
+	Kokkos::initialize(argc, argv);
     try
     {
         adios2::utils::Reorganize reorg(argc, argv);
@@ -34,6 +37,7 @@ int main(int argc, char *argv[])
         std::cout << e.what() << "\n";
     }
 
+	Kokkos::finalize();
 #if ADIOS2_USE_MPI
     MPI_Finalize();
 #endif

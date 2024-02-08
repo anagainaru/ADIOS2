@@ -68,6 +68,9 @@ Reorganize::Reorganize(int argc, char *argv[]) : Utils("adios_reorganize", argc,
         helper::Throw<std::invalid_argument>("Utils", "AdiosReorganize", "Reorganize",
                                              "Not enough arguments. At least 6 are required");
     }
+	Kokkos::DefaultExecutionSpace exe_space;
+    if (m_Rank == 0 )
+		std::cout << "Memory space            = " << exe_space.name() << std::endl;
     infilename = std::string(argv[1]);
     outfilename = std::string(argv[2]);
     rmethodname = std::string(argv[3]);

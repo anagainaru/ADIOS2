@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <iomanip>
 #include <string>
+#include <chrono>
 
 #include "adios2/common/ADIOSMacros.h"
 #include "adios2/core/ADIOS.h"
@@ -609,13 +610,15 @@ int Reorganize::ReadWrite(core::Engine &rStream, core::Engine &wStream, core::IO
     /*
      * Read each variable into a Kokkos::View
      */
-    std::vector<Kokkos::View<char *>> readbuf;
+	auto start = std::chrono::steady_clock::now();
+    std::vector<Kokkos::View<char *, Kokkos::HIPSpace>> readbuf;
     readbuf.reserve(nvars);
     for (size_t varidx = 0; varidx < nvars; ++varidx)
     {
         if (varinfo[varidx].v != nullptr)
         {
             const std::string &name = varinfo[varidx].v->m_Name;
+			if (name == "derive/magnitude") continue;
             if (varinfo[varidx].writesize != 0)
             {
                 // read variable subset
@@ -629,7 +632,7 @@ int Reorganize::ReadWrite(core::Engine &rStream, core::Engine &wStream, core::IO
 #define declare_template_instantiation(T)                                                          \
     else if (type == helper::GetDataType<T>())                                                     \
     {                                                                                              \
-        Kokkos::View<char *> view_buf(name, varinfo[varidx].writesize); \
+        Kokkos::View<char *, Kokkos::HIPSpace> view_buf(name, varinfo[varidx].writesize); \
         readbuf.push_back(view_buf); \
         if (varinfo[varidx].count.size() == 0)                                                     \
         {                                                                                          \
@@ -648,20 +651,26 @@ int Reorganize::ReadWrite(core::Engine &rStream, core::Engine &wStream, core::IO
         }
     }
     rStream.EndStep(); // read in data into allocated pointers
+    const auto elapsed = std::chrono::steady_clock::now() - start;
+    std::chrono::duration<double, std::milli> duration_ms(elapsed);
+    std::cout << "Read time [ms] " << duration_ms.count() << std::endl;
 
     /*
      * Write all variables
      */
     wStream.BeginStep();
+	size_t buffer_no = 0;
     for (size_t varidx = 0; varidx < nvars; ++varidx)
     {
         if (varinfo[varidx].v != nullptr)
         {
             const std::string &name = varinfo[varidx].v->m_Name;
+			if (name == "derive/magnitude") continue;
             if (varinfo[varidx].writesize != 0)
             {
                 // Write variable subset
                 std::cout << "rank " << m_Rank << ": Write variable " << name << std::endl;
+				if(buffer_no >= readbuf.size()) continue;
                 const DataType type = variables.at(name)->m_Type;
                 if (type == DataType::Struct)
                 {
@@ -672,22 +681,24 @@ int Reorganize::ReadWrite(core::Engine &rStream, core::Engine &wStream, core::IO
     {                                                                                              \
         if (varinfo[varidx].count.size() == 0)                                                     \
         {                                                                                          \
-            wStream.Put<T>(name, reinterpret_cast<T *>(readbuf[varidx].data()),                   \
+            wStream.Put<T>(name, reinterpret_cast<T *>(readbuf[buffer_no].data()),                   \
                            adios2::Mode::Sync);                                                    \
         }                                                                                          \
         else if (varinfo[varidx].v->m_ShapeID == adios2::ShapeID::LocalArray)                      \
         {                                                                                          \
-            wStream.Put<T>(name, reinterpret_cast<T *>(readbuf[varidx].data()),                   \
+            wStream.Put<T>(name, reinterpret_cast<T *>(readbuf[buffer_no].data()),                   \
                            adios2::Mode::Sync);                                                    \
         }                                                                                          \
         else                                                                                       \
         {                                                                                          \
             varinfo[varidx].v->SetSelection({varinfo[varidx].start, varinfo[varidx].count});       \
-            wStream.Put<T>(name, reinterpret_cast<T *>(readbuf[varidx].data()));                  \
+            wStream.Put<T>(name, reinterpret_cast<T *>(readbuf[buffer_no].data()));                  \
         }                                                                                          \
     }
                 ADIOS2_FOREACH_STDTYPE_1ARG(declare_template_instantiation)
 #undef declare_template_instantiation
+
+				buffer_no++;
             }
         }
     }

@@ -1775,6 +1775,7 @@ void BP5Writer::PutCommon(VariableBase &variable, const void *values, bool sync)
         }
     }
 
+    m_Profiler.Start("PutCommon");
     if (!variable.m_MemoryCount.empty())
     {
         const bool sourceRowMajor = helper::IsRowMajor(m_IO.m_HostLanguage);
@@ -1818,6 +1819,7 @@ void BP5Writer::PutCommon(VariableBase &variable, const void *values, bool sync)
                                     variable.m_ElementSize, DimCount, Shape, Count, Start, values,
                                     sync, nullptr);
     }
+    m_Profiler.Stop("PutCommon");
 }
 
 #define declare_type(T)                                                                            \

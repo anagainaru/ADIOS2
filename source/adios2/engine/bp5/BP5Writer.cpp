@@ -1723,6 +1723,7 @@ size_t BP5Writer::DebugGetDataBufferSize() const
 
 void BP5Writer::PutCommon(VariableBase &variable, const void *values, bool sync)
 {
+	m_Profiler.Start("PutCommon");
     if (!m_BetweenStepPairs)
     {
         BeginStep(StepMode::Update);
@@ -1818,6 +1819,7 @@ void BP5Writer::PutCommon(VariableBase &variable, const void *values, bool sync)
                                     variable.m_ElementSize, DimCount, Shape, Count, Start, values,
                                     sync, nullptr);
     }
+	m_Profiler.Stop("PutCommon");
 }
 
 #define declare_type(T)                                                                            \

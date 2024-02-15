@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <iomanip>
 #include <string>
+#include <chrono>
 
 #include "adios2/common/ADIOSMacros.h"
 #include "adios2/core/ADIOS.h"
@@ -611,11 +612,13 @@ int Reorganize::ReadWrite(core::Engine &rStream, core::Engine &wStream, core::IO
     /*
      * Read all variables into memory
      */
+	auto start = std::chrono::steady_clock::now();
     for (size_t varidx = 0; varidx < nvars; ++varidx)
     {
         if (varinfo[varidx].v != nullptr)
         {
             const std::string &name = varinfo[varidx].v->m_Name;
+			if (name == "derive/magnitude") continue;
             assert(varinfo[varidx].readbuf == nullptr);
             if (varinfo[varidx].writesize != 0)
             {
@@ -647,6 +650,9 @@ int Reorganize::ReadWrite(core::Engine &rStream, core::Engine &wStream, core::IO
         }
     }
     rStream.EndStep(); // read in data into allocated pointers
+    const auto elapsed = std::chrono::steady_clock::now() - start;
+    std::chrono::duration<double, std::milli> duration_ms(elapsed);
+    std::cout << "Read time [ms] " << duration_ms.count() << std::endl;
 
     /*
      * Write all variables
@@ -657,6 +663,7 @@ int Reorganize::ReadWrite(core::Engine &rStream, core::Engine &wStream, core::IO
         if (varinfo[varidx].v != nullptr)
         {
             const std::string &name = varinfo[varidx].v->m_Name;
+			if (name == "derive/magnitude") continue;
             if (varinfo[varidx].writesize != 0)
             {
                 // Write variable subset

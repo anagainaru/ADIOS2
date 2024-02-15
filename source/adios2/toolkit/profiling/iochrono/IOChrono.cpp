@@ -48,6 +48,8 @@ JSONProfiler::JSONProfiler(helper::Comm const &comm) : m_Comm(comm)
     AddTimerWatch("ES_meta1");
     AddTimerWatch("ES_meta2");
 
+	AddTimerWatch("PutCommon");
+
     AddTimerWatch("ES_close");
     AddTimerWatch("ES_AWD");
     AddTimerWatch("WaitOnAsync");

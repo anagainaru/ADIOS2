@@ -19,6 +19,7 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
+#include <chrono>
 
 using TP = std::chrono::high_resolution_clock::time_point;
 #define NOW() std::chrono::high_resolution_clock::now();
@@ -62,6 +63,7 @@ void BP5Reader::DestructorClose(bool Verbose) noexcept
 
 void BP5Reader::InstallMetadataForTimestep(size_t Step)
 {
+	auto tm_start = std::chrono::steady_clock::now();
     size_t pgstart = m_MetadataIndexTable[Step][0];
     size_t Position = pgstart + sizeof(uint64_t); // skip total data size
     const uint64_t WriterCount = m_WriterMap[m_WriterMapIndex[Step]].WriterCount;
@@ -92,6 +94,10 @@ void BP5Reader::InstallMetadataForTimestep(size_t Step)
             m_BP5Deserializer->InstallAttributeData(ThisAD, ThisADSize);
         MDPosition += ThisADSize;
     }
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "InstallMetadataStep " << time_seconds << std::endl;
 }
 
 StepStatus BP5Reader::BeginStep(StepMode mode, const float timeoutSeconds)
@@ -204,6 +210,7 @@ std::pair<double, double> BP5Reader::ReadData(adios2::transportman::TransportMan
                                               const size_t Timestep, const size_t StartOffset,
                                               const size_t Length, char *Destination)
 {
+	auto tm_start = std::chrono::steady_clock::now();
     /*
      * Warning: this function is called by multiple threads
      */
@@ -268,6 +275,10 @@ std::pair<double, double> BP5Reader::ReadData(adios2::transportman::TransportMan
     TP endRead = NOW();
     double timeRead = DURATION(startRead, endRead);
     return std::make_pair(timeSubfile, timeRead);
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "ReadData " << time_seconds << std::endl;
 }
 
 void BP5Reader::PerformGets()
@@ -315,6 +326,7 @@ void BP5Reader::PerformLocalGets()
     // TP start = NOW();
     PERFSTUBS_SCOPED_TIMER("BP5Reader::PerformGets");
     m_JSONProfiler.Start("DataRead");
+	auto tm_start = std::chrono::steady_clock::now();
     size_t maxReadSize;
 
     // TP startGenerate = NOW();
@@ -433,6 +445,10 @@ void BP5Reader::PerformLocalGets()
             m_BP5Deserializer->FinalizeGet(Req, false);
         }
     }
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "TotalReadData " << time_seconds << std::endl;
     m_JSONProfiler.Stop("DataRead");
     /*TP end = NOW();
     double t1 = DURATION(start, end);
@@ -715,6 +731,7 @@ void BP5Reader::InitTransports()
 
 void BP5Reader::InstallMetaMetaData(format::BufferSTL buffer)
 {
+	auto tm_start = std::chrono::steady_clock::now();
     size_t Position = m_MetaMetaDataFileAlreadyProcessedSize;
     while (Position < buffer.m_Buffer.size())
     {
@@ -730,6 +747,10 @@ void BP5Reader::InstallMetaMetaData(format::BufferSTL buffer)
         Position += MMI.MetaMetaIDLen + MMI.MetaMetaInfoLen;
     }
     m_MetaMetaDataFileAlreadyProcessedSize = Position;
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "InstallMetaMetadata " << time_seconds << std::endl;
 }
 
 void BP5Reader::UpdateBuffer(const TimePoint &timeoutInstant, const Seconds &pollSeconds,
@@ -892,6 +913,7 @@ void BP5Reader::UpdateBuffer(const TimePoint &timeoutInstant, const Seconds &pol
 size_t BP5Reader::ParseMetadataIndex(format::BufferSTL &bufferSTL, const size_t absoluteStartPos,
                                      const bool hasHeader)
 {
+	auto tm_start = std::chrono::steady_clock::now();
     const auto &buffer = bufferSTL.m_Buffer;
     size_t &position = bufferSTL.m_Position;
 
@@ -1092,6 +1114,10 @@ size_t BP5Reader::ParseMetadataIndex(format::BufferSTL &bufferSTL, const size_t 
         m_FilteredMetadataInfo.push_back(std::make_pair(minfo_pos, minfo_size));
     }
 
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "ReadIndexMetadata " << time_seconds << std::endl;
     return position;
 }
 

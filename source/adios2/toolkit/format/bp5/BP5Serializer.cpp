@@ -17,6 +17,7 @@
 #include "adios2/toolkit/format/buffer/ffs/BufferFFS.h"
 
 #include <stddef.h> // max_align_t
+#include <chrono>
 
 #include <cstring>
 
@@ -506,6 +507,7 @@ BP5Serializer::BP5WriterRec BP5Serializer::CreateWriterRec(void *Variable, const
                                                            DataType Type, size_t ElemSize,
                                                            size_t DimCount)
 {
+	auto tm_start = std::chrono::steady_clock::now();
     core::VariableBase *VB = static_cast<core::VariableBase *>(Variable);
 #ifdef ADIOS2_HAVE_DERIVED_VARIABLE
     core::VariableDerived *VD = dynamic_cast<core::VariableDerived *>(VB);
@@ -646,6 +648,10 @@ BP5Serializer::BP5WriterRec BP5Serializer::CreateWriterRec(void *Variable, const
     if (TextStructID)
         free((void *)TextStructID);
     Info.RecCount++;
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "CreateWriterRec " << time_seconds << std::endl;
     return Rec;
 }
 
@@ -697,6 +703,7 @@ void BP5Serializer::DumpDeferredBlocks(bool forceCopyDeferred)
 static void GetMinMax(const void *Data, size_t ElemCount, const DataType Type, MinMaxStruct &MinMax,
                       MemorySpace MemSpace)
 {
+	auto tm_start = std::chrono::steady_clock::now();
     MinMax.Init(Type);
     if (ElemCount == 0)
         return;
@@ -724,6 +731,11 @@ static void GetMinMax(const void *Data, size_t ElemCount, const DataType Type, M
         MinMax.MaxUnion.field_##N = *res.second;                                                   \
     }
     ADIOS2_FOREACH_MINMAX_STDTYPE_2ARGS(pertype)
+
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "GetMinMax " << time_seconds << std::endl;
 }
 
 void BP5Serializer::Marshal(void *Variable, const char *Name, const DataType Type, size_t ElemSize,
@@ -1466,6 +1478,7 @@ std::vector<char> BP5Serializer::CopyMetadataToContiguous(
     const std::vector<core::iovec> &AttributeEncodeBuffers, const std::vector<uint64_t> &DataSizes,
     const std::vector<uint64_t> &WriterDataPositions) const
 {
+	auto tm_start = std::chrono::steady_clock::now();
     std::vector<char> Ret;
     uint64_t RetSize = 0;
     size_t Position = 0;
@@ -1552,6 +1565,10 @@ std::vector<char> BP5Serializer::CopyMetadataToContiguous(
     helper::CopyToBuffer(Ret, Position, DataSizes.data(), DSCount);
     helper::CopyToBuffer(Ret, Position, &WDPCount);
     helper::CopyToBuffer(Ret, Position, WriterDataPositions.data(), WDPCount);
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "CopyMetadataToContig " << time_seconds << std::endl;
     return Ret;
 }
 

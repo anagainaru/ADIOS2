@@ -23,6 +23,7 @@
 #include <iomanip> // setw
 #include <iostream>
 #include <memory> // make_shared
+#include <chrono>
 
 namespace adios2
 {
@@ -146,6 +147,8 @@ void BP5Writer::PerformPuts()
 void BP5Writer::WriteMetaMetadata(
     const std::vector<format::BP5Base::MetaMetaInfoBlock> MetaMetaBlocks)
 {
+    PERFSTUBS_SCOPED_TIMER("BP5Writer::WriteMetaMetadata");
+	auto tm_start = std::chrono::steady_clock::now();
     for (auto &b : MetaMetaBlocks)
     {
         m_FileMetaMetadataManager.WriteFiles((char *)&b.MetaMetaIDLen, sizeof(size_t));
@@ -154,11 +157,17 @@ void BP5Writer::WriteMetaMetadata(
         m_FileMetaMetadataManager.WriteFiles((char *)b.MetaMetaInfo, b.MetaMetaInfoLen);
     }
     m_FileMetaMetadataManager.FlushFiles();
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "WriteMetaMetadata " << time_seconds << std::endl;
 }
 
 uint64_t BP5Writer::WriteMetadata(const std::vector<core::iovec> &MetaDataBlocks,
                                   const std::vector<core::iovec> &AttributeBlocks)
 {
+    PERFSTUBS_SCOPED_TIMER("BP5Writer::WriteMetadata");
+	auto tm_start = std::chrono::steady_clock::now();
     uint64_t MDataTotalSize = 0;
     uint64_t MetaDataSize = 0;
     std::vector<uint64_t> SizeVector;
@@ -202,6 +211,10 @@ uint64_t BP5Writer::WriteMetadata(const std::vector<core::iovec> &MetaDataBlocks
     m_FileMetadataManager.FlushFiles();
 
     m_MetaDataPos += MetaDataSize;
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "WriteMetadata " << time_seconds << " size " << MetaDataSize <<  std::endl;
     return MetaDataSize;
 }
 
@@ -226,6 +239,8 @@ void BP5Writer::AsyncWriteDataCleanup()
 
 void BP5Writer::WriteData(format::BufferV *Data)
 {
+    PERFSTUBS_SCOPED_TIMER("BP5Writer::WriteData");
+	auto tm_start = std::chrono::steady_clock::now();
     if (m_Parameters.AsyncWrite)
     {
         switch (m_Parameters.AggregationType)
@@ -268,6 +283,10 @@ void BP5Writer::WriteData(format::BufferV *Data)
         m_FileDataManager.FlushFiles();
         delete Data;
     }
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "WriteData " << time_seconds <<  std::endl;
 }
 
 void BP5Writer::WriteData_EveryoneWrites(format::BufferV *Data, bool SerializedWriters)
@@ -325,6 +344,8 @@ void BP5Writer::WriteData_EveryoneWrites(format::BufferV *Data, bool SerializedW
 
 void BP5Writer::WriteMetadataFileIndex(uint64_t MetaDataPos, uint64_t MetaDataSize)
 {
+    PERFSTUBS_SCOPED_TIMER("BP5Writer::WriteMetadataFileIndex");
+	auto tm_start = std::chrono::steady_clock::now();
     // bufsize: Step record
     size_t bufsize =
         1 + (4 + ((FlushPosSizeInfo.size() * 2) + 1) * m_Comm.Size()) * sizeof(uint64_t);
@@ -409,6 +430,10 @@ void BP5Writer::WriteMetadataFileIndex(uint64_t MetaDataPos, uint64_t MetaDataSi
 
     /* reset for next timestep */
     FlushPosSizeInfo.clear();
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "WriteMetadataIndex " << time_seconds <<  std::endl;
 }
 
 void BP5Writer::NotifyEngineAttribute(std::string name, DataType type) noexcept
@@ -507,6 +532,8 @@ void BP5Writer::MarshalAttributes()
 #ifdef ADIOS2_HAVE_DERIVED_VARIABLE
 void BP5Writer::ComputeDerivedVariables()
 {
+	auto tm_start = std::chrono::steady_clock::now();
+    PERFSTUBS_SCOPED_TIMER("BP5Writer::ComputeDeriveVars");
     auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
     auto const &m_Variables = m_IO.GetVariables();
     // parse all derived variables
@@ -562,6 +589,10 @@ void BP5Writer::ComputeDerivedVariables()
             free(std::get<0>(derivedBlock));
         }
     }
+	auto tm_end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = tm_end - tm_start;
+	double time_seconds = elapsed_seconds.count();
+	std::cout << "DerivedVar " << time_seconds << std::endl;
 }
 #endif
 
@@ -1500,6 +1531,7 @@ void BP5Writer::ExitComputationBlock() noexcept
 
 void BP5Writer::FlushData(const bool isFinal)
 {
+    PERFSTUBS_SCOPED_TIMER("BP5Writer::FlushData");
     BufferV *DataBuf;
     if (m_Parameters.BufferVType == (int)BufferVType::MallocVType)
     {

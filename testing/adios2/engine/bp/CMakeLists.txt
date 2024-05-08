@@ -103,6 +103,7 @@ bp_gtest_add_tests_helper(WriteReadMultiblock MPI_ALLOW)
 bp_gtest_add_tests_helper(WriteReadVector MPI_ALLOW)
 bp_gtest_add_tests_helper(WriteReadAttributesMultirank MPI_ALLOW)
 bp_gtest_add_tests_helper(LargeMetadata MPI_ALLOW)
+bp_gtest_add_tests_helper(MemorySpace MPI_NONE)
 
 set(BP5LargeMeta "Engine.BP.BPLargeMetadata.BPWrite1D_LargeMetadata.BP5.Serial")
 

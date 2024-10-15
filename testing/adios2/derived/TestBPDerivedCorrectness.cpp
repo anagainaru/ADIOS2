@@ -27,8 +27,16 @@ protected:
 
 TEST_P(DerivedCorrectnessP, ScalarFunctionsCorrectnessTest)
 {
-    const size_t Nx = 10, Ny = 3, Nz = 6;
+    int mpiRank = 0, mpiSize = 1;
+    const size_t Nx = 2, Ny = 3, Nz = 4;
     const size_t steps = 2;
+#if ADIOS2_USE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
+    const std::string filename("ADIOS2BPWriteDerivedScalar_MPI.bp");
+#else
+    const std::string filename("ADIOS2BPWriteDerivedScalar.bp");
+#endif
     // Application variable
     std::default_random_engine generator;
     std::uniform_real_distribution<float> distribution(0.0, 10.0);
@@ -46,9 +54,13 @@ TEST_P(DerivedCorrectnessP, ScalarFunctionsCorrectnessTest)
         simArray3[i] = distribution(generator);
     }
 
+#if ADIOS2_USE_MPI
+    adios2::ADIOS adios(MPI_COMM_WORLD);
+#else
     adios2::ADIOS adios;
+#endif
 
-    adios2::IO bpOut = adios.DeclareIO("BPWriteAddExpression");
+    adios2::IO bpOut = adios.DeclareIO("WriteScalarExpression");
 
     std::vector<std::string> varname = {"sim1/Ux", "sim1/Uy", "sim1/Uz"};
     const std::string derAgrAdd = "derived/agradd";
@@ -59,9 +71,9 @@ TEST_P(DerivedCorrectnessP, ScalarFunctionsCorrectnessTest)
     const std::string derPowName = "derived/pow";
     const std::string derSqrtName = "derived/sqrt";
 
-    auto Ux = bpOut.DefineVariable<float>(varname[0], {Nx, Ny, Nz}, {0, 0, 0}, {Nx, Ny, Nz});
-    auto Uy = bpOut.DefineVariable<float>(varname[1], {Nx, Ny, Nz}, {0, 0, 0}, {Nx, Ny, Nz});
-    auto Uz = bpOut.DefineVariable<float>(varname[2], {Nx, Ny, Nz}, {0, 0, 0}, {Nx, Ny, Nz});
+    auto Ux = bpOut.DefineVariable<float>(varname[0], {Nx * mpiSize, Ny, Nz}, {Nx * mpiRank, 0, 0}, {Nx, Ny, Nz});
+    auto Uy = bpOut.DefineVariable<float>(varname[1], {Nx * mpiSize, Ny, Nz}, {Nx * mpiRank, 0, 0}, {Nx, Ny, Nz});
+    auto Uz = bpOut.DefineVariable<float>(varname[2], {Nx * mpiSize, Ny, Nz}, {Nx * mpiRank, 0, 0}, {Nx, Ny, Nz});
     // clang-format off
     bpOut.DefineDerivedVariable(derAgrAdd,
                                 "x=" + varname[0] + "\n"
@@ -100,7 +112,6 @@ TEST_P(DerivedCorrectnessP, ScalarFunctionsCorrectnessTest)
                                 "sqrt(x)",
                                 mode);
     // clang-format on
-    std::string filename = "derivedScalar.bp";
     adios2::Engine bpFileWriter = bpOut.Open(filename, adios2::Mode::Write);
 
     for (size_t i = 0; i < steps; i++)
@@ -113,7 +124,7 @@ TEST_P(DerivedCorrectnessP, ScalarFunctionsCorrectnessTest)
     }
     bpFileWriter.Close();
 
-    adios2::IO bpIn = adios.DeclareIO("BPReadExpression");
+    adios2::IO bpIn = adios.DeclareIO("ReadScalarExpression");
     adios2::Engine bpFileReader = bpIn.Open(filename, adios2::Mode::Read);
 
     std::vector<float> readUx;
@@ -133,16 +144,38 @@ TEST_P(DerivedCorrectnessP, ScalarFunctionsCorrectnessTest)
     for (size_t i = 0; i < steps; i++)
     {
         bpFileReader.BeginStep();
-        bpFileReader.Get(varname[0], readUx);
-        bpFileReader.Get(varname[1], readUy);
-        bpFileReader.Get(varname[2], readUz);
-        bpFileReader.Get(derAddName, readAdd);
-        bpFileReader.Get(derAgrAdd, readAgrAdd);
-        bpFileReader.Get(derSubtrName, readSubtr);
-        bpFileReader.Get(derMultName, readMult);
-        bpFileReader.Get(derDivName, readDiv);
-        bpFileReader.Get(derPowName, readPow);
-        bpFileReader.Get(derSqrtName, readSqrt);
+        auto varUx = bpIn.InquireVariable<float>(varname[0]);
+        auto varUy = bpIn.InquireVariable<float>(varname[1]);
+        auto varUz = bpIn.InquireVariable<float>(varname[2]);
+        auto varAdd = bpIn.InquireVariable<float>(derAddName);
+        auto varAgrAdd = bpIn.InquireVariable<float>(derAgrAdd);
+        auto varSubtr = bpIn.InquireVariable<float>(derSubtrName);
+        auto varMult = bpIn.InquireVariable<float>(derMultName);
+        auto varDiv = bpIn.InquireVariable<float>(derDivName);
+        auto varPow = bpIn.InquireVariable<double>(derPowName);
+        auto varSqrt = bpIn.InquireVariable<double>(derSqrtName);
+
+        varUx.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+        varUy.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+        varUz.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+        varAdd.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+        varAgrAdd.SetSelection({{Nx * mpiRank, 0}, {Nx, Ny}});
+        varSubtr.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+        varMult.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+        varDiv.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+        varPow.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+        varSqrt.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+
+        bpFileReader.Get(varUx, readUx);
+        bpFileReader.Get(varUy, readUy);
+        bpFileReader.Get(varUz, readUz);
+        bpFileReader.Get(varAdd, readAdd);
+        bpFileReader.Get(varAgrAdd, readAgrAdd);
+        bpFileReader.Get(varSubtr, readSubtr);
+        bpFileReader.Get(varMult, readMult);
+        bpFileReader.Get(varDiv, readDiv);
+        bpFileReader.Get(varPow, readPow);
+        bpFileReader.Get(varSqrt, readSqrt);
         bpFileReader.EndStep();
 
         for (size_t ind = 0; ind < Nx * Ny * Nz; ++ind)
@@ -182,8 +215,16 @@ TEST_P(DerivedCorrectnessP, ScalarFunctionsCorrectnessTest)
 
 TEST_P(DerivedCorrectnessP, TrigCorrectnessTest)
 {
-    const size_t Nx = 10, Ny = 3, Nz = 6;
+    int mpiRank = 0, mpiSize = 1;
+    const size_t Nx = 2, Ny = 3, Nz = 4;
     const size_t steps = 2;
+#if ADIOS2_USE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
+    const std::string filename("ADIOS2BPWriteDerivedTrig_MPI.bp");
+#else
+    const std::string filename("ADIOS2BPWriteDerivedTrig.bp");
+#endif
     // Application variable
     std::default_random_engine generator;
     std::uniform_real_distribution<double> randomDist(0.0, 100.0);
@@ -200,7 +241,11 @@ TEST_P(DerivedCorrectnessP, TrigCorrectnessTest)
         simArray2[i] = sinDist(generator);
     }
 
+#if ADIOS2_USE_MPI
+    adios2::ADIOS adios(MPI_COMM_WORLD);
+#else
     adios2::ADIOS adios;
+#endif
 
     adios2::IO bpOut = adios.DeclareIO("BPWriteSinExpression");
 
@@ -213,8 +258,8 @@ TEST_P(DerivedCorrectnessP, TrigCorrectnessTest)
     std::string derAcosName = "derived/acos";
     std::string derAtanName = "derived/atan";
 
-    auto Ux = bpOut.DefineVariable<double>(randDistVar, {Nx, Ny, Nz}, {0, 0, 0}, {Nx, Ny, Nz});
-    auto Uy = bpOut.DefineVariable<double>(sinDistVar, {Nx, Ny, Nz}, {0, 0, 0}, {Nx, Ny, Nz});
+    auto Ux = bpOut.DefineVariable<double>(randDistVar, {Nx * mpiSize, Ny, Nz}, {Nx * mpiRank, 0, 0}, {Nx, Ny, Nz});
+    auto Uy = bpOut.DefineVariable<double>(sinDistVar, {Nx * mpiSize, Ny, Nz}, {Nx * mpiRank, 0, 0}, {Nx, Ny, Nz});
     // clang-format off
     bpOut.DefineDerivedVariable(derSinName,
                                 "x =" + randDistVar + " \n"
@@ -241,7 +286,6 @@ TEST_P(DerivedCorrectnessP, TrigCorrectnessTest)
                                 "atan(x)",
                                 mode);
     // clang-format on
-    std::string filename = "expTrig.bp";
     adios2::Engine bpFileWriter = bpOut.Open(filename, adios2::Mode::Write);
 
     for (size_t i = 0; i < steps; i++)
@@ -270,15 +314,33 @@ TEST_P(DerivedCorrectnessP, TrigCorrectnessTest)
     for (size_t i = 0; i < steps; i++)
     {
         bpFileReader.BeginStep();
-        bpFileReader.Get(randDistVar, readRandDist);
-        bpFileReader.Get(sinDistVar, readSinDist);
 
-        bpFileReader.Get(derSinName, readSin);
-        bpFileReader.Get(derCosName, readCos);
-        bpFileReader.Get(derTanName, readTan);
-        bpFileReader.Get(derAsinName, readAsin);
-        bpFileReader.Get(derAcosName, readAcos);
-        bpFileReader.Get(derAtanName, readAtan);
+    auto varUx = bpIn.InquireVariable<double>(randDistVar);
+    auto varUy = bpIn.InquireVariable<double>(sinDistVar);
+    auto varSin = bpIn.InquireVariable<double>(derSinName);
+    auto varCos = bpIn.InquireVariable<double>(derCosName);
+    auto varTan = bpIn.InquireVariable<double>(derTanName);
+    auto varAsin = bpIn.InquireVariable<double>(derAsinName);
+    auto varAcos = bpIn.InquireVariable<double>(derAcosName);
+    auto varAtan = bpIn.InquireVariable<double>(derAtanName);
+
+    varUx.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+    varUy.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+    varSin.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+    varCos.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+    varTan.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+    varAsin.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+    varAcos.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+    varAtan.SetSelection({{Nx * mpiRank, 0, 0}, {Nx, Ny, Nz}});
+        bpFileReader.Get(varUx, readRandDist);
+        bpFileReader.Get(varUy, readSinDist);
+
+        bpFileReader.Get(varSin, readSin);
+        bpFileReader.Get(varCos, readCos);
+        bpFileReader.Get(varTan, readTan);
+        bpFileReader.Get(varAsin, readAsin);
+        bpFileReader.Get(varAcos, readAcos);
+        bpFileReader.Get(varAtan, readAtan);
         bpFileReader.EndStep();
 
         for (size_t ind = 0; ind < Nx * Ny * Nz; ++ind)
@@ -700,12 +762,24 @@ INSTANTIATE_TEST_SUITE_P(DerivedCorrectness, DerivedCorrectnessP,
                          ::testing::Values(adios2::DerivedVarType::StatsOnly,
                                            adios2::DerivedVarType::ExpressionString,
                                            adios2::DerivedVarType::StoreData));
+
 int main(int argc, char **argv)
 {
+#if ADIOS2_USE_MPI
+    int provided;
+
+    // MPI_THREAD_MULTIPLE is only required if you enable the SST MPI_DP
+    MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided);
+#endif
+
     int result;
     ::testing::InitGoogleTest(&argc, argv);
 
     result = RUN_ALL_TESTS();
+
+#if ADIOS2_USE_MPI
+    MPI_Finalize();
+#endif
 
     return result;
 }

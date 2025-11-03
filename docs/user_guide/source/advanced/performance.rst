@@ -1,6 +1,6 @@
-#################
+######################
  Perfromance profiling 
-#################
+######################
 
 
 ADIOS2 provides built-in performance profiling capabilities to help users understand the runtime behavior of their I/O operations and identify potential bottlenecks.
@@ -15,20 +15,20 @@ The structure of the ``profiling.json`` file is a JSON array, where each element
 
 .. code-block:: json
 
-{ "rank":0, "start":"Wed_Dec_06_10:53:10_2023","ES_meta1_gather_mus": 1198, "ES_meta1_gather":{"mus":1198, "nCalls":100},"ES_mus": 357129, "ES":{"mus":357129, "nCalls":100},"Marshal_mus": 189057, "Marshal":{"mus":189057, "nCalls":300},"ES_meta1_mus": 1824, "ES_meta1":{"mus":1824, "nCalls":100},"ES_meta2_mus": 3190, "ES_meta2":{"mus":3190, "nCalls":100},"ES_close_mus": 1126, "ES_close":{"mus":1126, "nCalls":100},"ES_AWD_mus": 350717, "ES_AWD":{"mus":350717, "nCalls":100}, "databytes":0, "metadatabytes":0, "metametadatabytes":0, "transport_0":{"type":"File_POSIX", "wbytes":419430400, "close":{"mus":444, "nCalls":1}, "write":{"mus":233151, "nCalls":400}, "open":{"mus":1654, "nCalls":1}}, "transport_1":{"type":"File_POSIX", "wbytes":178720, "close":{"mus":364, "nCalls":1}, "write":{"mus":1807, "nCalls":704}, "open":{"mus":831, "nCalls":1}} },
-{ "rank":1, "start":"Wed_Dec_06_10:53:10_2023","ES_meta1_gather_mus": 248, "ES_meta1_gather":{"mus":248, "nCalls":100},"ES_mus": 355382, "ES":{"mus":355382, "nCalls":100},"Marshal_mus": 190353, "Marshal":{"mus":190353, "nCalls":300},"ES_meta1_mus": 431, "ES_meta1":{"mus":431, "nCalls":100},"ES_meta2_mus": 0, "ES_meta2":{"mus":0, "nCalls":100},"ES_close_mus": 739, "ES_close":{"mus":739, "nCalls":100},"ES_AWD_mus": 353988, "ES_AWD":{"mus":353988, "nCalls":100}, "databytes":0, "metadatabytes":0, "metametadatabytes":0 },
+   { "rank":0, "start":"Wed_Dec_06_10:53:10_2023","ES_meta1_gather_mus": 1198, "ES_meta1_gather":{"mus":1198, "nCalls":100},"ES_mus": 357129, "ES":{"mus":357129, "nCalls":100},"Marshal_mus": 189057, "Marshal":{"mus":189057, "nCalls":300},"ES_meta1_mus": 1824, "ES_meta1":{"mus":1824, "nCalls":100},"ES_meta2_mus": 3190, "ES_meta2":{"mus":3190, "nCalls":100},"ES_close_mus": 1126, "ES_close":{"mus":1126, "nCalls":100},"ES_AWD_mus": 350717, "ES_AWD":{"mus":350717, "nCalls":100}, "databytes":0, "metadatabytes":0, "metametadatabytes":0, "transport_0":{"type":"File_POSIX", "wbytes":419430400, "close":{"mus":444, "nCalls":1}, "write":{"mus":233151, "nCalls":400}, "open":{"mus":1654, "nCalls":1}}, "transport_1":{"type":"File_POSIX", "wbytes":178720, "close":{"mus":364, "nCalls":1}, "write":{"mus":1807, "nCalls":704}, "open":{"mus":831, "nCalls":1}} },
+   { "rank":1, "start":"Wed_Dec_06_10:53:10_2023","ES_meta1_gather_mus": 248, "ES_meta1_gather":{"mus":248, "nCalls":100},"ES_mus": 355382, "ES":{"mus":355382, "nCalls":100},"Marshal_mus": 190353, "Marshal":{"mus":190353, "nCalls":300},"ES_meta1_mus": 431, "ES_meta1":{"mus":431, "nCalls":100},"ES_meta2_mus": 0, "ES_meta2":{"mus":0, "nCalls":100},"ES_close_mus": 739, "ES_close":{"mus":739, "nCalls":100},"ES_AWD_mus": 353988, "ES_AWD":{"mus":353988, "nCalls":100}, "databytes":0, "metadatabytes":0, "metametadatabytes":0 },
 
 
 Each JSON object within the array provides profiling information for a specific rank and includes details such as:
 
-* **``rank``:** The MPI rank of the process.
-* **``start``:** The timestamp when profiling began for this rank.
-* **``<Operation>_mus``:** The total time spent in microseconds for a specific ADIOS2 operation (e.g., ``ES_mus`` for Engine Step).
-* **``<Operation>``:** A dictionary containing the total time (``mus``) and the number of calls (``nCalls``) for that operation.
-* **``databytes``:** The total number of data bytes processed.
-* **``metadatabytes``:** The total number of metadata bytes processed.
-* **``metametadatabytes``:** The total number of meta-metadata bytes processed.
-* **``transport_<id>``:** Details about specific communication transports used, including the type and the number of bytes and calls for operations like open, close, read, and write.
+* **rank:** The MPI rank of the process.
+* **start:** The timestamp when profiling began for this rank.
+* **<Operation>_mus:** The total time spent in microseconds for a specific ADIOS2 operation (e.g., ``ES_mus`` for Engine Step).
+* **<Operation>:** A dictionary containing the total time (``mus``) and the number of calls (``nCalls``) for that operation.
+* **databytes:** The total number of data bytes processed.
+* **metadatabytes:** The total number of metadata bytes processed.
+* **metametadatabytes:** The total number of meta-metadata bytes processed.
+* **transport_<id>:** Details about specific communication transports used, including the type and the number of bytes and calls for operations like open, close, read, and write.
 
 
 **Note:** The specific ADIOS2 library code regions and operations tracked within the ``profiling.json`` file can vary between different versions of ADIOS2. The keys and the level of detail provided in the JSON output might be subject to change as the library evolves.
@@ -55,7 +55,7 @@ Examples of how to run the scripts and the resulting output files are available 
 
 
 External Profiling Libraries
----------------------------------
+----------------------------
 
 ADIOS2 utilizes ``PERFSTUBS_SCOPED_TIMER`` hooks at various points within its codebase. These hooks provide a standardized mechanism for external performance analysis tools to instrument and measure the execution time of different ADIOS2 code regions.
 
@@ -79,11 +79,11 @@ When TAU is used to profile an ADIOS2 application, the output might look similar
 
 In this example output:
 
-* **``%Time``:** The percentage of the total execution time spent in the function.
-* **``Exclusive``:** The time spent solely within the function (excluding calls to other functions).
-* **``Inclusive``:** The total time spent within the function, including calls to other functions.
-* **``Ncalls``:** The number of times the function was called.
-* **``Function Name``:** The name of the ADIOS2 function or code region that was instrumented.
+* **%Time:** The percentage of the total execution time spent in the function.
+* **Exclusive:** The time spent solely within the function (excluding calls to other functions).
+* **Inclusive:** The total time spent within the function, including calls to other functions.
+* **Ncalls:** The number of times the function was called.
+* **Function Name:** The name of the ADIOS2 function or code region that was instrumented.
 
 TAU files generated from ADIOS2 applications can then be analyzed using a variety of performance analysis tools, such as the ParaProf Profile Browser or Vampir, to visualize and understand the application's behavior.
 
@@ -92,7 +92,7 @@ More information about TAU can be found at `https://github.com/UO-OACISS/tau2 <h
 **Note:** The specific ADIOS2 code regions surrounded by hooks can vary between different versions of ADIOS2.
 
 Real-time Performance Monioring
---------------
+-------------------------------
 
 The TAU performance system now offers a dedicated plugin for ADIOS2, enabling the storage of performance metrics directly within ADIOS files.
 
